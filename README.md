@@ -29,7 +29,7 @@ preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIM
   -h, --help                     Show this message
 ```
 
-If the longitude and latitude are not supplied, those values are looked up via the geocoder api
+If the longitude and latitude are not supplied, those values are looked up via the geocoder api.  When doing the lookups, if more than 1 result is returned, all results are included in the format.  Fence Builder looks for the most exact match and chooses that one when building the json output.
 
 ## Fence Builder
 
