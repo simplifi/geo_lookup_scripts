@@ -22,7 +22,7 @@ outputs the following YAML format:
        :latitude: 43.6333219
        :longitude: -88.72955189999999
 
-preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
+
   -s, --source=<filename/uri>    Source yaml file
   -o, --output=<s>               Output file location (default: )
   -v, --version                  Print version and exit
@@ -51,7 +51,7 @@ converts a geo-json yaml file to a geo-json json file
   -h, --help                     Show this message
 ```
 
-default output is to stdout, but can be specified via command line options
+Default output is to stdout, but can be specified via command line options.  When fence builder encounters an address with more than one matching location, it chooses the most exact match available to output as the fence.  The order of preference is `ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE.`  If no locations are assigned, the address will be output to STDERR and no fence will be built for that address.
 
 ## Advanced
 
