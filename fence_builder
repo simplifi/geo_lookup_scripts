@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+
+require 'csv'
+require 'bundler'
+require 'yaml'
+require 'optparse'
+
+Bundler.require
+
+ADDRESS_TYPES = %w(ROOFTOP RANGE_INTERPOLATED GEOMETRIC_CENTER APPROXIMATE).freeze
+FENCE_TYPES = %w(Target Conversion).freeze
+
+opts = Trollop::options do
+  version "0.9 2016 Simplifi"
+  banner <<-EOS
+usage: fence_builder --source filename.yml --output output.json
+
+converts a geo-json yaml file to a geo-json json file
+
+# preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
+EOS
+
+  opt :source, "Source yaml file", type: IO
+  opt :output, "Output file location, default is STDOUT", type: String, default: "-"
+  opt :fence_type, "Which type of geo fence to create, Target or Conversion", type: String, default: "Target"
+  opt :fence_size, "Size in miles for the bounding box", type: Float, default: 0.0189394
+
+end
+
+Trollop::die :fence_type, "incorrect target type, valid types are: #{:FENCE_TYPES.join(",")}" unless FENCE_TYPES.include? opts[:fence_type]
+
+json_hash = {type: 'FeatureCollection', features: [] }
+
+yaml_source = if opts[:source].nil?
+                ARGF.read
+              else
+                File.open(filename, "r") { |f| f.read }
+              end
+
+locations = YAML.load(yaml_source)
+
+locations.each do |location_set|
+
+  if location_set[:results].length == 0
+    $stderr.puts "no results: #{location_set}"
+    next
+  end
+
+  location = nil
+  if location_set[:results].length == 1
+    location = location_set[:results].first
+  else
+    location = ADDRESS_TYPES.map { |address_type| location_set[:results].detect { |result| result[:location_type] == address_type } }.compact.first
+  end
+
+  viewport = Geocoder::Calculations.bounding_box( [location[:latitude], location[:longitude]], opts[:fence_size], {units: :mi} )
+
+
+  sw = {lat: viewport[0] , lng: viewport[1] }
+  ne = {lat: viewport[2] , lng: viewport[3] }
+
+  points = [
+              [sw[:lng], sw[:lat]],
+              [sw[:lng], ne[:lat]],
+              [ne[:lng], ne[:lat]],
+              [ne[:lng], sw[:lat]]
+            ]
+
+  properties = {
+    properties: {
+      name: location_set[:name],
+      geoFenceType: opts[:fence_type]
+    },
+    geometry: {
+      type: 'Polygon',
+      coordinates: [points]
+    }
+  }
+  json_hash[:features] << properties
+
+end
+
+formatted_output = Oj.dump json_hash, mode: :compat
+
+if opts[:output] == '-'
+  puts formatted_output
+else
+  File.open(opts[:output], 'w') { |f| f.write formatted_output }
+end

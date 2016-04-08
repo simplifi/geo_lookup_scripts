@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+require 'csv'
+require 'bundler'
+require 'yaml'
+
+Bundler.require
+
+Geocoder.configure(
+   :lookup => :google_premier,
+    :api_key => (['OZLbBTSQLZiYLWIyI1MJyv5h6xE=','gme-simplifi','script'])
+)
+
+opts = Trollop::options do
+  version "0.9 2016 Simplifi"
+  banner <<-EOS
+
+Converts a csv file with the following columns:
+
+  required: name, address, city, state, zip
+  optional: longitude, latitude
+
+outputs the following YAML format:
+
+   ---
+   - :name: 'BALLWEG IMPLEMENT CO., INC.: W7246 HWY 68'
+     :address: W7246 HWY 68, WAUPUN, WI 53963
+     :results:
+     - :address: Waupun, WI 53963, USA
+       :location_type: APPROXIMATE
+       :latitude: 43.6333219
+       :longitude: -88.72955189999999
+
+preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
+EOS
+
+  opt :source, "Source yaml file", type: IO
+  opt :output, "Output file location", type: String, default: ''
+
+end
+
+if opts[:source].nil?
+  source_io = ARGF.read
+else
+  source_io = File.open(opts[:source]) { |f| f.read }
+end
+
+addresses = CSV.new(source_io, headers: true)
+
+locations = []
+
+addresses.each do |address|
+  location = {
+    name: "#{address["name"]}: #{address["address"]}",
+    address: "#{address["address"]}, #{address["city"]}, #{address["state"]} #{address["zip"]}",
+    results: []
+  }
+  if address['latitude'] && address['longitude']
+    location[:results] << {
+      address: address['address'],
+      location_type: 'PROVIDED',
+      latitude: address['latitude'],
+      longitude: address['longitude']
+    }
+  end
+  locations << location
+end
+
+locations.each do |location|
+  next if location[:results].any?
+  # we don't have any lat long data so let's search for it
+  geo_coder_results = Geocoder.search("#{location[:name]} #{location[:address]}")
+
+  geo_coder_results.each do |geo_coder_result|
+    result = {}
+
+    geo_location = geo_coder_result.data['geometry']['location']
+    result[:address] = geo_coder_result.data['formatted_address']
+    result[:location_type] = geo_coder_result.data['geometry']['location_type']
+    result[:latitude] = geo_location['lat']
+    result[:longitude] = geo_location['lng']
+    location[:results] << result
+    puts result
+  end
+  sleep 0.2
+
+end
+
+if ARGV[1].nil?
+  puts locations.to_yaml
+else
+  File.open(ARGV[1], "w") { |f| f.write(locations.to_yaml) }
+end
+
