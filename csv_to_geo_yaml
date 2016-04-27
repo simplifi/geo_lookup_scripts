@@ -50,16 +50,16 @@ locations = []
 
 addresses.each do |address|
   location = {
-    name: "#{address["name"]}: #{address["address"]}",
-    address: "#{address["address"]}, #{address["city"]}, #{address["state"]} #{address["zip"]}",
+    name: "#{address["name"].strip}: #{address["address"].strip}",
+    address: "#{address["address"].strip}, #{address["city"].strip}, #{address["state"].strip} #{address["zip"].strip}",
     results: []
   }
   if address['latitude'] && address['longitude']
     location[:results] << {
-      address: address['address'],
+      address: address['address'].strip,
       location_type: 'PROVIDED',
-      latitude: address['latitude'],
-      longitude: address['longitude']
+      latitude: address['latitude'].strip,
+      longitude: address['longitude'].strip
     }
   end
   locations << location
@@ -79,7 +79,6 @@ locations.each do |location|
     result[:latitude] = geo_location['lat']
     result[:longitude] = geo_location['lng']
     location[:results] << result
-    puts result
   end
   sleep 0.2
 
