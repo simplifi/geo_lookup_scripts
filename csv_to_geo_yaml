@@ -49,20 +49,24 @@ addresses = CSV.new(source_io, headers: true)
 locations = []
 
 addresses.each do |address|
-  location = {
-    name: "#{address["name"].strip}: #{address["address"].strip}",
-    address: "#{address["address"].strip}, #{address["city"].strip}, #{address["state"].strip} #{address["zip"].strip}",
-    results: []
-  }
-  if address['latitude'] && address['longitude']
-    location[:results] << {
-      address: address['address'].strip,
-      location_type: 'PROVIDED',
-      latitude: address['latitude'].strip,
-      longitude: address['longitude'].strip
+  begin
+    location = {
+      name: "#{address["name"].strip}: #{address["address"].strip}",
+      address: "#{address["address"].strip}, #{address["city"].strip}, #{address["state"].strip} #{address["zip"].strip}",
+      results: []
     }
+    if address['latitude'] && address['longitude']
+      location[:results] << {
+        address: address['address'].strip,
+        location_type: 'PROVIDED',
+        latitude: address['latitude'].strip,
+        longitude: address['longitude'].strip
+      }
+    end
+    locations << location
+  rescue
+    STDERR.puts "Unable to process row: #{address.inspect}"
   end
-  locations << location
 end
 
 locations.each do |location|
