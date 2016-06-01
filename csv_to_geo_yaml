@@ -44,7 +44,7 @@ else
   source_io = File.open(opts[:source]) { |f| f.read }
 end
 
-addresses = CSV.new(source_io, headers: true, header_converters: [:downcase, lambda {|f| f.strip}], converters: [lambda {|f| "#{f} ".strip}])
+addresses = CSV.new(source_io, headers: true, header_converters: [:downcase, lambda {|f| "#{f} ".strip}], converters: [lambda {|f| "#{f} ".strip}])
 locations = []
 
 start_time = Time.now
@@ -53,20 +53,21 @@ lookups_done = 0
 addresses.each do |address|
   begin
     location = {
-      name: "#{address["name"].strip}: #{address["address"].strip}",
-      address: "#{address["address"].strip}, #{address["city"].strip}, #{address["state"].strip} #{address["zip"].strip}",
+      name: "#{address.fetch("name", "")}: #{address.fetch("address", "")}",
+      address: "#{address.fetch("address","")}, #{address.fetch("city","")}, #{address.fetch("state", "")} #{address.fetch("zip","")}",
       results: []
     }
-    if address['latitude'] && address['longitude']
+    if (address['latitude'] && address['latitude'] != "") && (address['longitude'] && address['longitude'] != "")
       location[:results] << {
-        address: address['address'].strip,
+        address: address.fetch("address",""),
         location_type: 'PROVIDED',
-        latitude: address['latitude'].strip,
-        longitude: address['longitude'].strip
+        latitude: address['latitude'].to_f,
+        longitude: address['longitude'].to_f
       }
     end
     locations << location
-  rescue
+  rescue => error
+    STDERR.puts error.inspect
     STDERR.puts "Unable to process row: #{address.inspect}"
   end
 end
