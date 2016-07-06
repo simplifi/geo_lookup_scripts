@@ -23,7 +23,7 @@ EOS
   opt :source, "Source yaml file", type: IO
   opt :output, "Output file location, default is STDOUT", type: String, default: "-"
   opt :fence_type, "Which type of geo fence to create, Target or Conversion", type: String, default: "Target"
-  opt :fence_size, "Size in miles for the bounding box", type: Float, default: 0.0189394
+  opt :fence_size, "Size in miles for the bounding box", type: Float, default: 0.062
 
 end
 
@@ -34,7 +34,7 @@ json_hash = {type: 'FeatureCollection', features: [] }
 yaml_source = if opts[:source].nil?
                 ARGF.read
               else
-                File.open(filename, "r") { |f| f.read }
+                File.open(opts[:source], "r") { |f| f.read }
               end
 
 locations = YAML.load(yaml_source)
@@ -53,7 +53,9 @@ locations.each do |location_set|
     location = ADDRESS_TYPES.map { |address_type| location_set[:results].detect { |result| result[:location_type] == address_type } }.compact.first
   end
 
-  viewport = Geocoder::Calculations.bounding_box( [location[:latitude], location[:longitude]], opts[:fence_size], {units: :mi} )
+  location_set[:radius] = opts[:fence_size] unless location_set[:radius] > 0
+
+  viewport = Geocoder::Calculations.bounding_box( [location[:latitude], location[:longitude]], location_set[:radius], {units: :mi} )
 
 
   sw = {lat: viewport[0] , lng: viewport[1] }
@@ -68,7 +70,7 @@ locations.each do |location_set|
 
   properties = {
     properties: {
-      name: location_set[:name],
+      name: location_set[:label],
       geoFenceType: opts[:fence_type]
     },
     geometry: {

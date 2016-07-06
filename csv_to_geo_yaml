@@ -24,6 +24,7 @@ outputs the following YAML format:
    ---
    - :name: 'BALLWEG IMPLEMENT CO., INC.: W7246 HWY 68'
      :address: W7246 HWY 68, WAUPUN, WI 53963
+     :radius: 0.062
      :results:
      - :address: Waupun, WI 53963, USA
        :location_type: APPROXIMATE
@@ -44,17 +45,26 @@ else
   source_io = File.open(opts[:source]) { |f| f.read }
 end
 
-addresses = CSV.new(source_io, headers: true, header_converters: [:downcase, lambda {|f| "#{f} ".strip}], converters: [lambda {|f| "#{f} ".strip}])
+source_io.encode!('UTF-8', invalid: :replace)
+
+addresses = CSV.new(source_io,
+                    headers: true,
+                    header_converters: [:downcase, lambda {|f| "#{f} ".strip}],
+                    converters: [lambda {|f| "#{f} ".strip}],
+                    encoding: 'ISO-8859-1'
+                   )
 locations = []
 
 start_time = Time.now
 lookups_done = 0
 
 addresses.each do |address|
+  next if address.to_hash.values.all?(&:nil?)
   begin
     location = {
-      name: "#{address.fetch("name", "")}: #{address.fetch("address", "")}",
+      name: address.fetch("name", ""),
       address: "#{address.fetch("address","")}, #{address.fetch("city","")}, #{address.fetch("state", "")} #{address.fetch("zip","")}",
+      radius: address.fetch("radius", 0).to_f,
       results: []
     }
     if (address['latitude'] && address['latitude'] != "") && (address['longitude'] && address['longitude'] != "")
@@ -65,16 +75,21 @@ addresses.each do |address|
         longitude: address['longitude'].to_f
       }
     end
+    location[:label] = address.fetch("label", "#{location[:name]}: #{location[:address]}")
+
     locations << location
   rescue => error
     STDERR.puts error.inspect
     STDERR.puts "Unable to process row: #{address.inspect}"
   end
 end
+
 locations.each do |location|
   next if location[:results].any?
   # we don't have any lat long data so let's search for it
-  geo_coder_results = Geocoder.search("#{location[:name]} #{location[:address]}")
+  search_string = "#{location[:name]} #{location[:address]} #{location[:city]}, #{location[:state]} #{location[:zip]}".strip
+
+  geo_coder_results = Geocoder.search(search_string)
 
   geo_coder_results.each do |geo_coder_result|
     result = {}
