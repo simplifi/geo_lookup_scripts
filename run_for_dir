@@ -13,7 +13,7 @@ files.each do |file|
   puts "processing file #{file_index} of #{files.length}: #{file}"
   destination = File.join(output_dir, File.basename(file).gsub(".csv", ".json"))
   unless File.exists?(destination) && File.size(destination) > 0
-    `cat "#{file}" | ./csv_to_geo_yaml | ./fence_builder --fence-size 0.062 > "#{destination}"`
+    `cat "#{file}" | LC_ALL=C sed 's/[^[:print:]]//g' | ./csv_to_geo_yaml | ./fence_builder > "#{destination}"`
   end
   file_index += 1
 end
