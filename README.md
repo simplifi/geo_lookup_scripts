@@ -16,6 +16,7 @@ outputs the following YAML format:
    ---
    - :name: 'BALLWEG IMPLEMENT CO., INC.: W7246 HWY 68'
      :address: W7246 HWY 68, WAUPUN, WI 53963
+     :label: 'My Geofence #1'
      :results:
      - :address: Waupun, WI 53963, USA
        :location_type: APPROXIMATE
@@ -58,6 +59,6 @@ Default output is to stdout, but can be specified via command line options.  Whe
 These two scripts can be used together like this
 
 ```
-cat ~/Downloads/north-east-fences.csv| ./csv_to_geo_yaml | ./fence_builder --fence-type Target > north-east-fences.json
+cat ~/Downloads/north-east-fences.csv| LC_ALL=C sed 's/[^[:print:]]//g' | ./csv_to_geo_yaml | ./fence_builder --fence-type Target > north-east-fences.json
 ```
 
