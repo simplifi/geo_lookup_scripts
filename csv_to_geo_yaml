@@ -1,0 +1,115 @@
+#!/usr/bin/env ruby
+require 'csv'
+require 'bundler'
+require 'yaml'
+
+Bundler.require
+
+Geocoder.configure(
+   :lookup => :google_premier,
+    :api_key => (['OZLbBTSQLZiYLWIyI1MJyv5h6xE=','gme-simplifi','script'])
+)
+
+opts = Trollop::options do
+  version "0.9 2016 Simplifi"
+  banner <<-EOS
+
+Converts a csv file with the following columns:
+
+  required: name, address, city, state, zip
+  optional: longitude, latitude
+
+outputs the following YAML format:
+
+   ---
+   - :name: 'BALLWEG IMPLEMENT CO., INC.: W7246 HWY 68'
+     :address: W7246 HWY 68, WAUPUN, WI 53963
+     :radius: 0.062
+     :results:
+     - :address: Waupun, WI 53963, USA
+       :location_type: APPROXIMATE
+       :latitude: 43.6333219
+       :longitude: -88.72955189999999
+
+preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
+EOS
+
+  opt :source, "Source yaml file", type: IO
+  opt :output, "Output file location", type: String, default: ''
+
+end
+
+if opts[:source].nil?
+  source_io = ARGF.read
+else
+  source_io = File.open(opts[:source]) { |f| f.read }
+end
+
+source_io.encode!('UTF-8', invalid: :replace)
+
+addresses = CSV.new(source_io,
+                    headers: true,
+                    header_converters: [:downcase, lambda {|f| "#{f} ".strip}],
+                    converters: [lambda {|f| "#{f} ".strip}],
+                    encoding: 'ISO-8859-1'
+                   )
+locations = []
+
+start_time = Time.now
+lookups_done = 0
+
+addresses.each do |address|
+  next if address.to_hash.values.all?(&:nil?)
+  begin
+    location = {
+      name: address.fetch("name", ""),
+      address: "#{address.fetch("address","")}, #{address.fetch("city","")}, #{address.fetch("state", "")} #{address.fetch("zip","")}",
+      radius: address.fetch("radius", 0).to_f,
+      results: []
+    }
+    if (address['latitude'] && address['latitude'] != "") && (address['longitude'] && address['longitude'] != "")
+      location[:results] << {
+        address: address.fetch("address",""),
+        location_type: 'PROVIDED',
+        latitude: address['latitude'].to_f,
+        longitude: address['longitude'].to_f
+      }
+    end
+    location[:label] = address.fetch("label", "#{location[:name]}: #{location[:address]}")
+
+    locations << location
+  rescue => error
+    STDERR.puts error.inspect
+    STDERR.puts "Unable to process row: #{address.inspect}"
+  end
+end
+
+locations.each do |location|
+  next if location[:results].any?
+  # we don't have any lat long data so let's search for it
+  search_string = "#{location[:name]} #{location[:address]} #{location[:city]}, #{location[:state]} #{location[:zip]}".strip
+
+  geo_coder_results = Geocoder.search(search_string)
+
+  geo_coder_results.each do |geo_coder_result|
+    result = {}
+
+    geo_location = geo_coder_result.data['geometry']['location']
+    result[:address] = geo_coder_result.data['formatted_address']
+    result[:location_type] = geo_coder_result.data['geometry']['location_type']
+    result[:latitude] = geo_location['lat']
+    result[:longitude] = geo_location['lng']
+    location[:results] << result
+  end
+  lookups_done += 1
+  STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
+  sleep 0.2
+end
+STDERR.puts "\nfinished converting csv file"
+
+if ARGV[1].nil?
+  puts locations.to_yaml
+else
+  File.open(ARGV[1], "w") { |f| f.write(locations.to_yaml) }
+end
+
