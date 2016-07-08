@@ -1,0 +1,5 @@
+# https://developers.google.com/maps/documentation/business/
+key: < key obtained from google >
+client: < obtained from google >
+channel: script
+  

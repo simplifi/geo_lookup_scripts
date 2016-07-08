@@ -5,9 +5,10 @@ require 'yaml'
 
 Bundler.require
 
+config = YAML::load_file('config.yml')
 Geocoder.configure(
    :lookup => :google_premier,
-    :api_key => (['OZLbBTSQLZiYLWIyI1MJyv5h6xE=','gme-simplifi','script'])
+    :api_key => ([config["key"], config["client"], config["channel"]])
 )
 
 opts = Trollop::options do
@@ -84,7 +85,6 @@ addresses.each do |address|
     STDERR.puts "Unable to process row: #{address.inspect}"
   end
 end
-
 locations.each do |location|
   next if location[:results].any?
   # we don't have any lat long data so let's search for it
