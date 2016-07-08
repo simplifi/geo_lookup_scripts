@@ -71,7 +71,7 @@ locations.each do |location_set|
   properties = {
     properties: {
       name: location_set[:label],
-      geoFenceType: opts[:fence_type]
+      geoFenceType: location_set[:fence_type] || opts[:fence_type]
     },
     geometry: {
       type: 'Polygon',
