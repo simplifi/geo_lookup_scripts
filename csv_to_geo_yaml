@@ -18,7 +18,7 @@ opts = Trollop::options do
 Converts a csv file with the following columns:
 
   required: name, address, city, state, zip
-  optional: longitude, latitude
+  optional: longitude, latitude, radius, fence_type, label
 
 outputs the following YAML format:
 
@@ -26,6 +26,8 @@ outputs the following YAML format:
    - :name: 'BALLWEG IMPLEMENT CO., INC.: W7246 HWY 68'
      :address: W7246 HWY 68, WAUPUN, WI 53963
      :radius: 0.062
+     :label: 'my label'
+     :fence_type: 'Target'
      :results:
      - :address: Waupun, WI 53963, USA
        :location_type: APPROXIMATE
@@ -33,6 +35,10 @@ outputs the following YAML format:
        :longitude: -88.72955189999999
 
 preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
+
+radius      - expressed in miles
+label       - will override the default label of "name: address"
+fence_type  - valid values are Target or Conversion, default is Target
 EOS
 
   opt :source, "Source yaml file", type: IO
