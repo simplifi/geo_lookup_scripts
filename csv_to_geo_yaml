@@ -77,6 +77,7 @@ addresses.each do |address|
     end
     location[:label] = address.fetch("label", "#{location[:name]}: #{location[:address]}")
 
+    location[:fence_type] = address.fetch("fence_type", nil)
     locations << location
   rescue => error
     STDERR.puts error.inspect
