@@ -1,5 +1,30 @@
 # Geo Lookup Scripts
 
+## Requirements
+* ruby 2.1+  
+
+Follow the instructions here for ruby installer
+https://github.com/postmodern/ruby-install#readme
+
+Then install Ruby:
+```
+ruby-install ruby
+```
+    
+
+* bundler 
+
+``` 
+# install bundler
+gem install bundler 
+
+# cd into the directory for the scripts:
+cd geo_lookup_scripts 
+
+# install all the dependencies using bundler
+bundle install
+```
+
 ## CSV to Geo Yaml
 
 #### Configuration
