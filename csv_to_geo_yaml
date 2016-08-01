@@ -58,15 +58,15 @@ addresses = CSV.new(source_io,
                     headers: true,
                     header_converters: [:downcase, lambda {|f| "#{f} ".strip}],
                     converters: [lambda {|f| "#{f} ".strip}],
-                    encoding: 'ISO-8859-1'
+                    encoding: 'ISO-8859-1',
+                    skip_blanks: true
                    )
 locations = []
 
 start_time = Time.now
 lookups_done = 0
-
 addresses.each do |address|
-  next if address.to_hash.values.all?(&:nil?)
+  next if address.to_hash.values.all? { |val| val.to_s.strip == "" }
   begin
     location = {
       name: address.fetch("name", ""),
@@ -90,6 +90,7 @@ addresses.each do |address|
     STDERR.puts "Unable to process row: #{address.inspect}"
   end
 end
+
 locations.each do |location|
   next if location[:results].any?
   # we don't have any lat long data so let's search for it
@@ -109,7 +110,7 @@ locations.each do |location|
   end
   lookups_done += 1
   STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
-  sleep 0.2
+  sleep 0.1
 end
 STDERR.puts "\nfinished converting csv file"
 
