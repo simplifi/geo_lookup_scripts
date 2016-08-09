@@ -82,7 +82,10 @@ addresses.each do |address|
         longitude: address['longitude'].to_f
       }
     end
-    location[:label] = address.fetch("label", "#{address.fetch("name","")}: #{address.fetch("address", "")}")
+    location[:label] = address.fetch("label", "")
+    if location[:label].strip.length == 0
+      location[:label] = "#{address.fetch("name","")}: #{address.fetch("address", "")}"
+    end
     location[:fence_type] = address.fetch("fence_type", nil)
     locations << location
   rescue => error
