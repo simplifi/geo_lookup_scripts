@@ -97,7 +97,7 @@ end
 locations.each do |location|
   next if location[:results].any?
   # we don't have any lat long data so let's search for it
-  search_string = "#{location[:name]} #{location[:address]} #{location[:city]}, #{location[:state]} #{location[:zip]}".strip
+  search_string = [location[:address], location[:city], location[:state], location[:zip]].compact.join(", ")
 
   geo_coder_results = Geocoder.search(search_string)
 
@@ -109,6 +109,8 @@ locations.each do |location|
     result[:location_type] = geo_coder_result.data['geometry']['location_type']
     result[:latitude] = geo_location['lat']
     result[:longitude] = geo_location['lng']
+    result[:search_string] = search_string
+
     location[:results] << result
   end
   lookups_done += 1
