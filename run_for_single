@@ -8,6 +8,6 @@ output_dir = "./output/"
 
 destination = File.join(output_dir, File.basename(file).gsub(".csv", ".json"))
 unless File.exists?(destination) && File.size(destination) > 0
-  `cat "#{file}" | LC_ALL=C gsed 's/\\o015/\\n/g' | LC_ALL=C gsed 's/[^[:print:]]//g' | ./csv_to_geo_yaml | ./fence_builder > "#{destination}"`
+  `cat "#{file}" | LC_ALL=C gsed 's/\\o015/\\n/g' | LC_ALL=C gsed 's/[^[:print:]]//g' | gsed '/^[,]*$/d' | ./csv_to_geo_yaml | ./fence_builder > "#{destination}"`
 end
 
