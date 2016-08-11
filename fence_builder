@@ -27,6 +27,34 @@ EOS
 
 end
 
+class LocationLookupCache
+  def initialize
+    @locations = []
+    @duplicates = []
+  end
+
+  def duplicate_location?(location, fence_type, label)
+    matching_location = @locations.find { |l| l[:location][:latitude] == location[:latitude] && l[:location][:longitude] == location[:longitude] }
+    if matching_location.nil?
+      @locations << { label: label, location: location }
+      return false
+    else
+      master = @duplicates.find { |dup| dup[:location] == matching_location && dup[:fence_type] == fence_type }
+      if master.nil?
+        @duplicates << { location: matching_location, fence_type: fence_type, dopplegangers: [label] }
+      else
+        master[:dopplegangers] << label
+      end
+    end
+  end
+
+  def duplicate_locations
+    @duplicates
+  end
+
+end
+
+
 Trollop::die :fence_type, "incorrect target type, valid types are: #{:FENCE_TYPES.join(",")}" unless FENCE_TYPES.include? opts[:fence_type]
 
 json_hash = {type: 'FeatureCollection', features: [] }
@@ -37,6 +65,7 @@ yaml_source = if opts[:source].nil?
                 File.open(opts[:source], "r") { |f| f.read }
               end
 
+lookup_cache = LocationLookupCache.new
 locations = YAML.load(yaml_source)
 
 locations.each do |location_set|
@@ -52,6 +81,8 @@ locations.each do |location_set|
   else
     location = ADDRESS_TYPES.map { |address_type| location_set[:results].detect { |result| result[:location_type] == address_type } }.compact.first
   end
+
+  next if lookup_cache.duplicate_location?(location, location_set[:fence_type], location_set[:label])
 
   location_set[:radius] = opts[:fence_size] unless location_set[:radius] > 0
 
@@ -83,6 +114,18 @@ locations.each do |location_set|
 end
 
 formatted_output = Oj.dump json_hash, mode: :compat
+
+dups = lookup_cache.duplicate_locations
+
+unless dups.empty?
+  $stderr.puts "DUPLICATE ADDRESSES DETECTED:"
+  dups.each do |dup|
+    $stderr.puts "  location: #{dup[:location][:label]}"
+    dup[:dopplegangers].each do |dppl|
+      $stderr.puts "       dup: #{dppl}"
+    end
+  end
+end
 
 if opts[:output] == '-'
   puts formatted_output
