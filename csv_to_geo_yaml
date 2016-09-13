@@ -63,8 +63,7 @@ addresses = CSV.new(source_io,
                    )
 locations = []
 
-start_time = Time.now
-lookups_done = 0
+
 addresses.each do |address|
   next if address.to_hash.values.all? { |val| val.to_s.strip == "" }
   begin
@@ -94,30 +93,39 @@ addresses.each do |address|
   end
 end
 
-locations.each do |location|
-  next if location[:results].any?
-  # we don't have any lat long data so let's search for it
-  search_string = [location[:address], location[:city], location[:state], location[:zip]].compact.join(", ")
+start_time = Time.now
+lookups_done = 0
+batches = locations.each_slice(100).to_a
+batches.each do |batch|
+  threads = []
+  batch.each do |location|
+    next if location[:results].any?
+    threads << Thread.new do
+      begin
+        # we don't have any lat long data so let's search for it
+        search_string = [location[:address], location[:city], location[:state], location[:zip]].compact.join(", ")
 
-  geo_coder_results = Geocoder.search(search_string)
+        geo_coder_results = Geocoder.search(search_string)
 
-  geo_coder_results.each do |geo_coder_result|
-    result = {}
+        geo_coder_results.each do |geo_coder_result|
+          result = {}
 
-    geo_location = geo_coder_result.data['geometry']['location']
-    result[:address] = geo_coder_result.data['formatted_address']
-    result[:location_type] = geo_coder_result.data['geometry']['location_type']
-    result[:latitude] = geo_location['lat']
-    result[:longitude] = geo_location['lng']
-    result[:search_string] = search_string
+          geo_location = geo_coder_result.data['geometry']['location']
+          result[:address] = geo_coder_result.data['formatted_address']
+          result[:location_type] = geo_coder_result.data['geometry']['location_type']
+          result[:latitude] = geo_location['lat']
+          result[:longitude] = geo_location['lng']
+          result[:search_string] = search_string
 
-    location[:results] << result
+          location[:results] << result
+        end
+        lookups_done += 1
+        STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
+      end
+    end
   end
-  lookups_done += 1
-  STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
-  sleep 0.1
+  threads.map(&:join)
 end
-STDERR.puts "\nfinished converting csv file"
 
 if ARGV[1].nil?
   puts locations.to_yaml
@@ -125,3 +133,4 @@ else
   File.open(ARGV[1], "w") { |f| f.write(locations.to_yaml) }
 end
 
+STDERR.puts "\nfinished converting csv file in #{(Time.now - start_time).round(2)}s"
