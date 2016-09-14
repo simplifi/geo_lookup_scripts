@@ -95,8 +95,7 @@ end
 
 start_time = Time.now
 lookups_done = 0
-batches = locations.each_slice(100).to_a
-batches.each do |batch|
+locations.each_slice(100) do |batch|
   threads = []
   batch.each do |location|
     next if location[:results].any?
