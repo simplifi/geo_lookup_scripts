@@ -119,18 +119,18 @@ batches.each do |batch|
 
           location[:results] << result
         end
-        lookups_done += 1
-        STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
       end
     end
   end
+  lookups_done += 100
+  STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
   threads.map(&:join)
 end
 
 if ARGV[1].nil?
   puts locations.to_yaml
 else
-  File.open(ARGV[1], "w") { |f| f.write(locations.to_yaml) }
+  File.open(ARGV[1], "w+") { |f| f.write(locations.to_yaml) }
 end
 
 STDERR.puts "\nfinished converting csv file in #{(Time.now - start_time).round(2)}s"
