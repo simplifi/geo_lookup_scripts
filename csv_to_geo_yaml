@@ -95,7 +95,7 @@ end
 
 start_time = Time.now
 lookups_done = 0
-locations.each_slice(100) do |batch|
+locations.each_slice(25) do |batch|
   threads = []
   batch.each do |location|
     next if location[:results].any?
@@ -121,9 +121,10 @@ locations.each_slice(100) do |batch|
       end
     end
   end
-  lookups_done += 100
-  STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s \t percent done: #{((lookups_done / locations.length.to_f) * 100).round(2)} \t total looked up: #{lookups_done}       "
+  lookups_done += batch.size
+  STDERR.print "\rLookup rate: #{(lookups_done / (Time.now - start_time)).round(2)}/s\tCompleted: #{((lookups_done / locations.length.to_f) * 100).round(2)}%\tTotal looked up: #{lookups_done}\t\r"
   threads.map(&:join)
+  sleep(0.5)
 end
 
 if ARGV[1].nil?
