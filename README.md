@@ -42,7 +42,7 @@ Converts a csv file with the following columns:
 
   radius      - expressed in miles
   label       - will override the default label of "name: address"
-  fence_type  - valid values are Target or Conversion, default is Target
+  fence_type  - valid values are Target, Conversion or Event, default is Target
 
 outputs the following YAML format:
 
@@ -79,7 +79,7 @@ converts a geo-json yaml file to a geo-json json file
 # preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE
   -s, --source=<filename/uri>    Source yaml file
   -o, --output=<s>               Output file location, default is STDOUT (default: -)
-  -f, --fence-type=<s>           Which type of geo fence to create, Target or Conversion (default: Target)
+  -f, --fence-type=<s>           Which type of geo fence to create, Target, Conversion, or Event (default: Target)
   -e, --fence-size=<f>           Size in miles for the bounding box (default: 0.062)
   -v, --version                  Print version and exit
   -h, --help                     Show this message

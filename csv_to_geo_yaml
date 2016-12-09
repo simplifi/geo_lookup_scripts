@@ -38,7 +38,7 @@ preference of addresses: ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIM
 
 radius      - expressed in miles
 label       - will override the default label of "name: address"
-fence_type  - valid values are Target or Conversion, default is Target
+fence_type  - valid values are Target, Conversion or Event, default is Target
 EOS
 
   opt :source, "Source yaml file", type: IO
