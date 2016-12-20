@@ -7,8 +7,9 @@ Bundler.require
 
 config = YAML::load_file('config.yml')
 Geocoder.configure(
-   :lookup => :google_premier,
-    :api_key => ([config["key"], config["client"], config["channel"]])
+  :lookup => :google_premier,
+  :new_forward_geocoder  => true,
+  :api_key => ([config["key"], config["client"], config["channel"]])
 )
 
 opts = Trollop::options do
