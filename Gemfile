@@ -4,7 +4,7 @@ source "https://rubygems.org"
 # gem "rails"
 #
 gem 'pry'
-gem 'geocoder'
+gem 'geocoder', '~> 1.4', '>= 1.4.1'
 gem 'oj'
 gem 'trollop'
 
